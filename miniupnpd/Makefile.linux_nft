@@ -32,7 +32,7 @@ STRIP ?= strip
 PKG_CONFIG ?= pkg-config
 CP = cp
 DOXYGEN ?= doxygen
-
+FIND = find
 
 INSTALLPREFIX ?= $(PREFIX)/usr
 SBININSTALLDIR = $(INSTALLPREFIX)/sbin
@@ -85,6 +85,12 @@ LDLIBS += $(shell $(PKG_CONFIG) --static --libs-only-l uuid)
 else
 $(info please install uuid-dev package / libuuid)
 endif # ($(TEST),1)
+
+LIBBACKTRACE := $(shell $(FIND) /usr/lib/gcc -name 'libbacktrace.a')
+ifeq ($(LIBBACKTRACE),)
+else
+LDLIBS += -lbacktrace
+endif
 
 # genuuid uses the uuidgen CLI tool which is part of libuuid
 # from the e2fsprogs

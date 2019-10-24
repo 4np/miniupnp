@@ -330,6 +330,13 @@ case $OS_NAME in
 					;;
 			esac
 		fi
+
+		LIBBACKTRACE=`find /usr/lib/gcc -type f -name 'libbacktrace.a'`
+
+		if [ -n "${LIBBACKTRACE}" ]; then
+            echo "#define HAS_BACKTRACE 1" >> ${CONFIGFILE}
+        fi
+
         echo "#define DROP_PRIVILEGES 1" >> ${CONFIGFILE}
         echo "#define HAS_FORK 1" >>  ${CONFIGFILE}
 		echo "#define USE_IFACEWATCHER 1" >> ${CONFIGFILE}

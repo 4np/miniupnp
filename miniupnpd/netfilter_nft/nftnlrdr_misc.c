@@ -9,6 +9,8 @@
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution.
  */
+#include "../config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>

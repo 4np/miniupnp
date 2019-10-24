@@ -24,7 +24,12 @@
 
 #if (__STDC_VERSION__ >= 199901L) && (__GNUC__ >= 3)
 /* disambiguate log messages by adding position in source. requires GNU C99 or later. Pesky trailing comma... */
+#ifdef HAS_BACKTRACE
+extern void _log_error(const char *file, int line_number, const char *func,const char *fmt, ...);
+#define log_error( msg, ...)	_log_error( __FILE__, __LINE__, __func__, msg, ##__VA_ARGS__ )
+#else
 #define log_error( msg, ...)	syslog(LOG_ERR,   "%s:%d: in %s(); " msg, __FILE__, __LINE__, __func__, ##__VA_ARGS__ )
+#endif
 #define log_notice( msg, ...)	syslog(LOG_NOTICE,"%s:%d: in %s(); " msg, __FILE__, __LINE__, __func__, ##__VA_ARGS__ )
 #define log_info( msg, ...)		syslog(LOG_INFO,  "%s:%d: in %s(); " msg, __FILE__, __LINE__, __func__, ##__VA_ARGS__ )
 #define log_debug( msg, ...)	syslog(LOG_DEBUG, "%s:%d: in %s(); " msg, __FILE__, __LINE__, __func__, ##__VA_ARGS__ )

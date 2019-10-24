@@ -9,9 +9,10 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <syslog.h>
+#include <stdarg.h>
 
-#include "macros.h"
 #include "config.h"
+#include "macros.h"
 #include "portinuse.h"
 
 #ifdef USE_NETFILTER
@@ -19,6 +20,25 @@ const char * miniupnpd_nat_chain = "MINIUPNPD";
 const char * miniupnpd_nat_postrouting_chain = "MINIUPNPD-POSTROUTING";
 const char * miniupnpd_forward_chain = "MINIUPNPD";
 #endif /* USE_NETFILTER */
+
+void _log_error(const char *file, int line_number, const char *func, const char *fmt, ...)
+{
+	int    prefix_len;
+	va_list args;
+	char   message[1024];
+
+	va_start(args, fmt);
+
+	snprintf(message, sizeof(message), "%s:%d: %s(): ", file, line_number, func);
+	prefix_len = strlen(message);
+
+	vsnprintf(&message[prefix_len], sizeof(message)-prefix_len, fmt, args);
+
+	va_end(args);
+
+	syslog(LOG_ERR, "%s", message);
+}
+
 
 int main(int argc, char * * argv)
 {

@@ -10,6 +10,9 @@
 #define UPNPGLOBALVARS_H_INCLUDED
 
 #include <time.h>
+#ifdef HAS_BACKTRACE
+#include <backtrace.h>
+#endif
 #include "upnppermissions.h"
 #include "miniupnpdtypes.h"
 #include "config.h"
@@ -23,6 +26,10 @@ extern const char * ext_if_name;
 #ifdef ENABLE_IPV6
 /* name of the network interface used to access internet - for IPv6*/
 extern const char * ext_if_name6;
+#endif
+
+#ifdef HAS_BACKTRACE
+extern struct backtrace_state * backtrace_handle;
 #endif
 
 /* stun host/port configuration */

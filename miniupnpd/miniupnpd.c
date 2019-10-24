@@ -41,6 +41,11 @@
 #include <sys/param.h>
 #include <pwd.h>
 #include <grp.h>
+#ifdef HAS_BACKTRACE
+#include <stdarg.h>
+#include <backtrace.h>
+#endif
+
 #if defined(sun)
 #include <kstat.h>
 #elif !defined(__linux__)
@@ -94,6 +99,10 @@ void init_iptpinhole(void);
 #endif
 #endif
 
+#ifdef HAS_BACKTRACE
+#include <backtrace.h>
+#endif
+
 #ifndef DEFAULT_CONFIG
 #define DEFAULT_CONFIG "/etc/miniupnpd.conf"
 #endif
@@ -115,6 +124,45 @@ static int nfqueue_cb( struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct n
 int identify_ip_protocol (char *payload);
 int get_udp_dst_port (char *payload);
 #endif	/* ENABLE_NFQUEUE */
+
+#ifdef HAS_BACKTRACE
+
+int _cb_backtrace(void *data, uintptr_t pc, const char *filename, int lineno, const char *function)
+{
+	int result;
+	UNUSED(data);
+	UNUSED(pc);
+
+	result = ((filename == NULL) && (lineno == 0));
+	if (result == 0) {
+		syslog( LOG_ERR, "...%s:%d: %s() ", filename, lineno, function );
+	}
+	return result;
+}
+
+void _log_error(const char *file, int line_number, const char *func, const char *fmt, ...)
+{
+	int    prefix_len;
+	va_list args;
+	char   message[1024];
+
+	va_start(args, fmt);
+
+	snprintf(message, sizeof(message), "%s:%d: %s(): ", file, line_number, func);
+	prefix_len = strlen(message);
+
+	vsnprintf(&message[prefix_len], sizeof(message)-prefix_len, fmt, args);
+
+	va_end(args);
+
+	/* output the message */
+	syslog(LOG_ERR, "%s", message);
+
+	/* output the back trace */
+	backtrace_full( backtrace_handle, 1, _cb_backtrace, NULL, NULL);
+
+}
+#endif
 
 /* variables used by signals */
 static volatile sig_atomic_t quitting = 0;
@@ -2977,6 +3025,16 @@ main(int argc, char * argv[])
 	struct passwd * userInfo;
 #endif
 	struct runtime_vars v;
+
+#ifdef HAS_BACKTRACE
+	/* do this as early as possible */
+	backtrace_handle = backtrace_create_state(argv[0], 0, NULL, NULL);
+	if (backtrace_handle == NULL)
+	{
+		/* don't use log_error macro! */
+		syslog(LOG_ERR, "Failed to initialize backtrace functionality");
+	}
+#endif
 
 	result = miniupnpd_configure(argc, argv, &v);
 	if (result != 0)
