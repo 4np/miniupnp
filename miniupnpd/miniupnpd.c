@@ -1794,9 +1794,6 @@ miniupnpd_configure(int argc, char * argv[], struct runtime_vars * v)
 				miniupnpd_nat_postrouting_chain = ary_options[i].value;
 				break;
 #endif    /* else USE_NFTABLES */
-			case UPNPUSER:
-				runas_user = ary_options[i].value;
-				break;
 #endif    /* USE_NETFILTER */
 			case UPNPNOTIFY_INTERVAL:
 				v->notify_interval = atoi(ary_options[i].value);

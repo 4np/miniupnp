@@ -138,7 +138,6 @@ const char * miniupnpd_forward_chain = "MINIUPNPD";
 const char * miniupnpd_v6_filter_chain = "MINIUPNPD";
 #endif /* ENABLE_UPNPPINHOLE */
 #endif
-const char * runas_user = "nobody";
 #endif /* USE_NETFILTER */
 
 #ifdef ENABLE_NFQUEUE
