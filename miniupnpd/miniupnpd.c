@@ -162,8 +162,10 @@ void _log_error(const char *file, int line_number, const char *func, const char 
 	syslog(LOG_ERR, "%s", message);
 
 	/* output the back trace */
-	backtrace_full( backtrace_handle, 1, _cb_backtrace, NULL, NULL);
-
+	if (backtrace_handle != NULL)
+	{
+		backtrace_full( backtrace_handle, 1, _cb_backtrace, NULL, NULL);
+	}
 }
 #endif
 
@@ -3035,6 +3037,34 @@ main(int argc, char * argv[])
 	}
 #endif
 
+	/* prescan for the simple options that 'short circuit' */
+	for (int i = 1; i < argc; i++) {
+		/* check for '-h' or '--help' */
+		if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
+			return print_usage(argv[0], pidfilename);
+		}
+		/* check for 'version' or '--version' */
+		if (strcmp(argv[i], "version") == 0 || strcmp(argv[i], "--version") == 0) {
+			puts("miniupnpd " MINIUPNPD_VERSION
+				 #ifdef MINIUPNPD_GIT_REF
+				 " " MINIUPNPD_GIT_REF
+				 #endif
+				 " " __DATE__ );
+#ifdef ENABLE_HTTPS
+			#ifdef OPENSSL_VERSION
+			puts(OpenSSL_version(OPENSSL_VERSION));
+#else
+			puts(SSLeay_version(SSLEAY_VERSION));
+#endif
+#endif
+			return 0;
+		}
+	}
+
+	result = miniupnpd_configure(argc, argv, &v);
+	if (result != 0)
+		return result;
+
 #ifdef USE_CAPABILITIES
 	if ( capng_have_capability(CAPNG_EFFECTIVE, CAP_NET_BIND_SERVICE) &&
 		 capng_have_capability(CAPNG_EFFECTIVE, CAP_NET_BROADCAST) &&
@@ -3046,10 +3076,6 @@ main(int argc, char * argv[])
 		return 1;
 	}
 #endif
-
-	result = miniupnpd_configure(argc, argv, &v);
-	if (result != 0)
-		return result;
 
 	result = miniupnpd_initialize(&v);
 	if (result != 0)
