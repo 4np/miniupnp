@@ -348,7 +348,7 @@ case $OS_NAME in
         if [ -f "/usr/include/cap-ng.h" ]; then
             echo "#define USE_CAPABILITIES 1" >>  ${CONFIGFILE}
         else
-            $(info cap-ng.h is needed, please install libcap-ng-dev)
+            echo "cap-ng.h is needed, please install libcap-ng-dev"
             exit 1
         fi
 		echo "#define USE_IFACEWATCHER 1" >> ${CONFIGFILE}
