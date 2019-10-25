@@ -345,7 +345,12 @@ case $OS_NAME in
         fi
 
         echo "#define DROP_PRIVILEGES 1" >> ${CONFIGFILE}
-        echo "#define HAS_FORK 1" >>  ${CONFIGFILE}
+        if [ -f "/usr/include/cap-ng.h" ]; then
+            echo "#define USE_CAPABILITIES 1" >>  ${CONFIGFILE}
+        else
+            $(info cap-ng.h is needed, please install libcap-ng-dev)
+            exit 1
+        fi
 		echo "#define USE_IFACEWATCHER 1" >> ${CONFIGFILE}
 		if [ -z ${FW} ]; then
 			# test the current environment to determine which to use

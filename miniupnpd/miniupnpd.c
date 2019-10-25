@@ -41,6 +41,9 @@
 #include <sys/param.h>
 #include <pwd.h>
 #include <grp.h>
+#ifdef USE_CAPABILITIES
+#include <cap-ng.h>
+#endif
 #ifdef HAS_BACKTRACE
 #include <stdarg.h>
 #include <backtrace.h>
@@ -1364,7 +1367,7 @@ openAllSockets(struct runtime_vars * v)
 			v->shttpl_v4 =  OpenAndConfHTTPSocket(&listen_port, 0);
 			if (v->shttpl_v4 < 0)
 			{
-				log_error("Failed to open socket for HTTP on port %d (IPv4). EXITING", v->port);
+				log_error("Failed to open socket for HTTP on port %d (IPv4). EXITING", v->http_port);
 				return 1;
 			}
 		}
@@ -2898,7 +2901,7 @@ main_loop(struct runtime_vars * v)
 		{
 			/*log_info("Received UDP Packet");*/
 #ifdef ENABLE_HTTPS
-			ProcessSSDPRequest(v->sudp, (unsigned short)v->port, (unsigned short)v->https_port);
+			ProcessSSDPRequest(v->sudp, (unsigned short)v->http_port, (unsigned short)v->https_port);
 #else
 			ProcessSSDPRequest(v->sudp, (unsigned short)v->http_port);
 #endif
@@ -2908,9 +2911,9 @@ main_loop(struct runtime_vars * v)
 		{
 			log_info("Received UDP Packet (IPv6)");
 #ifdef ENABLE_HTTPS
-			ProcessSSDPRequest(v->sudpv6, (unsigned short)v->port, (unsigned short)v->https_port);
+			ProcessSSDPRequest(v->sudpv6, (unsigned short)v->http_port, (unsigned short)v->https_port);
 #else
-			ProcessSSDPRequest(v->sudpv6, (unsigned short)v->port);
+			ProcessSSDPRequest(v->sudpv6, (unsigned short)v->http_port);
 #endif
 		}
 #endif
@@ -3020,10 +3023,6 @@ main(int argc, char * argv[])
 {
 	int result = 0;
 
-#if defined(DROP_PRIVILEGES) && defined(HAS_FORK)
-	pid_t child;
-	struct passwd * userInfo;
-#endif
 	struct runtime_vars v;
 
 #ifdef HAS_BACKTRACE
@@ -3033,6 +3032,18 @@ main(int argc, char * argv[])
 	{
 		/* don't use log_error macro! */
 		syslog(LOG_ERR, "Failed to initialize backtrace functionality");
+	}
+#endif
+
+#ifdef USE_CAPABILITIES
+	if ( capng_have_capability(CAPNG_EFFECTIVE, CAP_NET_BIND_SERVICE) &&
+		 capng_have_capability(CAPNG_EFFECTIVE, CAP_NET_BROADCAST) &&
+		 capng_have_capability(CAPNG_EFFECTIVE, CAP_NET_ADMIN) &&
+		 capng_have_capability(CAPNG_EFFECTIVE, CAP_NET_RAW) ) {
+		log_info("started with sufficient privileges");
+	} else {
+		fprintf(stderr, "%s does not have the elevated privileges it needs to update network rules. Exiting...\n", argv[0]);
+		return 1;
 	}
 #endif
 
@@ -3080,56 +3091,24 @@ main(int argc, char * argv[])
 
 	/* drop privileges */
 #ifdef DROP_PRIVILEGES
+
 #ifdef HAS_PLEDGE
 	/* mcast ? unix ? */
 	if (pledge("stdio inet pf", NULL) < 0) {
 		log_error("pledge(): %m");
 		return 1;
 	}
-	result = main_loop(&v);
 #endif /* HAS_PLEDGE */
 
-#ifdef HAS_FORK
+#ifdef USE_CAPABILITIES
 
-	/* fork(), so we can regain our original privileges at exit to clean up things like the pid file */
-	switch (child = fork()) {
-	case -1: /* fork failed */
-		log_error("unable to fork: %m");
-		result = 1;
-		break;
+#endif
 
-	case 0: /* I'm the child process */
-		/* drop privileges */
-		userInfo = getpwnam(runas_user);
-		if (userInfo == NULL) {
-			log_error("invalid user name '%s': %m", runas_user);
-			return 1;
-		} else {
-			/* change the effective group - always do this first */
-			if (setgid(userInfo->pw_gid) == -1) {
-				struct group *groupInfo = getgrgid(userInfo->pw_gid);
-				log_error("unable to switch to group '%s': %m", groupInfo->gr_name);
-				return 1;
-			}
-			/* change the effective user */
-			if (setuid(userInfo->pw_uid) == -1) {
-				log_error("unable to switch to user '%s': %m", userInfo->pw_name);
-				return 1;
-			}
-		}
-		/* execute the main loop with reduced privileges */
-		return main_loop(&v);
-
-	default: /* I'm the parent process */
-		/* do absolutely *nothing* except wait for child to complete */
-		waitpid(child, &result, 0);
-		break;
-	}
-#endif /* HAS_FORK */
-#else
-	result = main_loop(&v);
 #endif /* DROP_PRIVILEGES */
 
+	if (result == 0) {
+		result = main_loop(&v);
+	}
 	if (result != 0)
 		return result;
 

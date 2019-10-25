@@ -86,6 +86,12 @@ else
 $(info please install uuid-dev package / libuuid)
 endif # ($(TEST),1)
 
+LIBCAP := $(shell $(FIND) /lib -name 'libcap-ng.so*')
+ifeq ($(LIBCAP),)
+else
+LDLIBS += -lcap-ng
+endif
+
 LIBBACKTRACE := $(shell $(FIND) /usr/lib/gcc -name 'libbacktrace.a')
 ifeq ($(LIBBACKTRACE),)
 else
