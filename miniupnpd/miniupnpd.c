@@ -3127,7 +3127,10 @@ main(int argc, char * argv[])
 #endif /* HAS_PLEDGE */
 
 #ifdef USE_CAPABILITIES
-
+	capng_clear(CAPNG_SELECT_BOTH);
+	/* don't need CAP_NET_BIND SERVICE, since ports should already be bound */
+	capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED, CAP_NET_BROADCAST, CAP_NET_ADMIN, CAP_NET_RAW, -1);
+	capng_apply(CAPNG_SELECT_BOTH);
 #endif
 
 #endif /* DROP_PRIVILEGES */
