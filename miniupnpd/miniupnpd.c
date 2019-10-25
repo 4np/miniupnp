@@ -1562,10 +1562,10 @@ closeAllSockets(struct runtime_vars * v)
 	}
 #endif
 #if defined(ENABLE_IPV6) && defined(ENABLE_PCP)
-	if(spcp_v6 >= 0)
+	if(v->spcp_v6 >= 0)
 	{
-		close(spcp_v6);
-		spcp_v6 = -1;
+		close(v->spcp_v6);
+		v->spcp_v6 = -1;
 	}
 #endif
 #ifdef USE_MINIUPNPDCTL
@@ -2486,7 +2486,7 @@ main_loop(struct runtime_vars * v)
 			if(GETFLAG(ENABLENATPMPMASK))
 			{
 #ifdef ENABLE_IPV6
-				PCPPublicAddressChanged(snatpmp, v->addr_count, spcp_v6);
+				PCPPublicAddressChanged(v->snatpmp, v->addr_count, v->spcp_v6);
 #else /* IPv4 only */
 				PCPPublicAddressChanged(v->snatpmp, v->addr_count);
 #endif
@@ -2866,7 +2866,7 @@ main_loop(struct runtime_vars * v)
 					       sender_str);
 					continue;
 				}
-				ProcessIncomingNATPMPPacket(snatpmp[i], msg_buff, len, &senderaddr);
+				ProcessIncomingNATPMPPacket(v->snatpmp[i], msg_buff, len, &senderaddr);
 #endif
 			}
 		}

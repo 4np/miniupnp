@@ -331,10 +331,17 @@ case $OS_NAME in
 			esac
 		fi
 
-		LIBBACKTRACE=`find /usr/lib/gcc -type f -name 'libbacktrace.a'`
-
-		if [ -n "${LIBBACKTRACE}" ]; then
-            echo "#define HAS_BACKTRACE 1" >> ${CONFIGFILE}
+        # $CC should already be set, but if not, assume gcc
+        if [ -z "${CC}" ]; then
+            CC=gcc
+        fi
+        # ask the C preprocessor to tell us its list of default include paths
+        CC_INC_PATHS=$(${CC} -E -Wp,-v -x c /dev/null 2>&1 | sed -n -e '/^ \// p')
+        if [ -n "${CC_INC_PATHS}" ]; then
+    		BACKTRACE_HDR=$(find ${CC_INC_PATHS} -type f -name 'backtrace.h')
+            if [ -n "${BACKTRACE_HDR}" ]; then
+                echo "#define HAS_BACKTRACE 1" >> ${CONFIGFILE}
+            fi
         fi
 
         echo "#define DROP_PRIVILEGES 1" >> ${CONFIGFILE}
