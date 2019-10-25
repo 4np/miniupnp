@@ -86,9 +86,8 @@ else
 $(info please install uuid-dev package / libuuid)
 endif # ($(TEST),1)
 
-LIBCAP := $(shell $(FIND) /lib -name 'libcap-ng.so*')
-ifeq ($(LIBCAP),)
-else
+TEST := $(shell $(PKG_CONFIG) --exists libcap-ng && echo 1)
+ifeq ($(TEST),1)
 LDLIBS += -lcap-ng
 endif
 
