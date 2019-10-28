@@ -361,7 +361,7 @@ case $OS_NAME in
 				FW=iptables
 			fi
 		fi
-		V6SOCKETS_ARE_V6ONLY=`/sbin/sysctl -n net.ipv6.bindv6only`
+		V6SOCKETS_ARE_V6ONLY=`sysctl -n net.ipv6.bindv6only`
 		;;
 	OpenWRT)
 		OS_URL=http://www.openwrt.org/
