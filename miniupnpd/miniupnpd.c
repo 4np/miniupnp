@@ -3124,10 +3124,15 @@ main(int argc, char * argv[])
 #endif /* HAS_PLEDGE */
 
 #ifdef USE_CAPABILITIES
-	capng_clear(CAPNG_SELECT_BOTH);
-	/* don't need CAP_NET_BIND SERVICE, since ports should already be bound */
-	capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED, CAP_NET_BROADCAST, CAP_NET_ADMIN, CAP_NET_RAW, -1);
-	capng_apply(CAPNG_SELECT_BOTH);
+    capng_setpid(getpid());
+    capng_clear(CAPNG_SELECT_BOTH);
+    /* don't need CAP_NET_BIND SERVICE, since ports should already be bound*/
+    if (capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED, CAP_NET_BROADCAST, CAP_NET_ADMIN, CAP_NET_RAW, -1)) {
+        log_error("Unable to update capability set.");
+    }
+    if (capng_apply(CAPNG_SELECT_BOTH)) {
+        log_error("Unable to apply new capability set.");
+    }
 #endif
 
 #endif /* DROP_PRIVILEGES */
